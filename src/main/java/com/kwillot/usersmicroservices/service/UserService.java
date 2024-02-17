@@ -14,6 +14,6 @@ public interface UserService {
     User addRoleToUser(String username, String rolename);
     List<User> findAllUsers();
     User registerUser(RegistrationRequest request);
-
     public void sendEmailUser(User u, String code);
+    public User validateToken(String code);
 }

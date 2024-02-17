@@ -5,6 +5,8 @@ import com.kwillot.usersmicroservices.entities.User;
 import com.kwillot.usersmicroservices.repos.RoleRepository;
 import com.kwillot.usersmicroservices.repos.UserRepository;
 import com.kwillot.usersmicroservices.service.exceptions.EmailAlreadyExistsException;
+import com.kwillot.usersmicroservices.service.exceptions.ExpiredTokenException;
+import com.kwillot.usersmicroservices.service.exceptions.InvalidTokenException;
 import com.kwillot.usersmicroservices.service.register.RegistrationRequest;
 import com.kwillot.usersmicroservices.service.register.VerificationToken;
 import com.kwillot.usersmicroservices.service.register.VerificationTokenRepository;
@@ -14,10 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 
 @Transactional
 @Service
@@ -82,6 +81,9 @@ public class UserServiceImpl implements UserService{
         VerificationToken token = new VerificationToken(code, newUser);
         verificationTokenRepo.save(token);
 
+        //envoyer le code par email
+        this.sendEmailUser(newUser, token.getToken());
+
         return newUser;
     }
 
@@ -96,5 +98,21 @@ public class UserServiceImpl implements UserService{
         String emailBody ="Bonjour "+ "<h1>"+u.getUsername() +"</h1>" +
                 " Votre code de validation est "+"<h1>"+code+"</h1>";
         emailSender.sendEmail(u.getEmail(), emailBody);
+    }
+
+    @Override
+    public User validateToken(String code) {
+        VerificationToken token = verificationTokenRepo.findByToken(code);
+        if(token == null){
+            throw new InvalidTokenException("Invalid Token");
+        }
+        User user = token.getUser();
+        Calendar calendar = Calendar.getInstance();
+        if ((token.getExpirationTime().getTime() - calendar.getTime().getTime()) <= 0){
+            verificationTokenRepo.delete(token); throw new ExpiredTokenException("expired Token");
+        }
+        user.setEnabled(true);
+        userRep.save(user);
+        return user;
     }
 }

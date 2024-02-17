@@ -43,7 +43,7 @@ public class SecurityConfig {
                 }))//.and().
                 .authorizeHttpRequests(requests-> requests.requestMatchers("/login").permitAll()
                                 .requestMatchers("/all").hasAuthority("ADMIN")
-                                .requestMatchers("/login","/register/**").permitAll()
+                                .requestMatchers("/login","/register/**", "/verifyEmail/**").permitAll()
                                 .anyRequest().authenticated())
                 .addFilterBefore(new JWTAuthenticationFilter (authMgr), UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(new JWTAuthorizationFilter(),UsernamePasswordAuthenticationFilter.class);
